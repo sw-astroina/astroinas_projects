@@ -1,5 +1,5 @@
 /*
-Arachne 0.3
+Arachne 0.3.1
 Sophie Weidmann Nov 19 2025
 With help from Max Weidmann
 
