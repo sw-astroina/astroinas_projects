@@ -218,13 +218,17 @@ void weavecheck() {
       amends ++;
     }
   }
+  
 /*
 There are gonna be some edge cases of rows changing to invalidate columns. 
 I'm just gonna trust that there's such a small chance of that occurring
 and trust the weaver to visually catch and manually adjust for that.
+I'm also noticing it's making seemingly unnecessary amendments, 
+but it's called "Glitch Mode" anyway, so it can do what it wants.
 Maybe some developer will come along and offer a better system, 
 but for now this is good enough.
 */
+
 apply();
 }
 
