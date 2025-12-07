@@ -53,15 +53,16 @@ int a;
 int b;  //Max named a and b, and I'm too lazy to rename for clarity.
 
 //Switches// 
-int prevPedalState; 
-int pedalState = 0;  //these are for the status of the switches
-int upState = 0;
-int downState = 0;
+bool prevPedalState = LOW; 
+bool pedalState = LOW;  //these are for the status of the switches
+bool upState = LOW;
+bool downState = LOW;
 
 //Miscellaneous//
 bool on;         //self-explanatory. Is the switch set to "off"?
 bool glitch;     //if the loom should generate its own pattern, glitch is true
-bool prevGlitch; //we're tracking this so that we can check pattern validity when transitioning out of glitch mode
+bool prevGlitch = false; //we're tracking this so that we can check pattern validity when transitioning out of glitch mode
+
 int genSeed;     //this is what the dht humidity data turns into, to generate bools from
 int pick = 0;        //pick count is tracking how many rows we've woven. It's essentially "how many times have we done this?"
 
@@ -90,6 +91,7 @@ void loop() {
 
 //Detect falling edge of pedal//
   if (pedalState == LOW && prevPedalState == HIGH) {  //the pedal has a pull down resistor, so it shouldn't need debouncing?
+    Serial.print("Pedal released, "); //I'm not even getting this printout, so the above if must be faulty
     if (upState == HIGH) {
       Serial.print("Patterning, ");
       glitch = false;
@@ -127,6 +129,28 @@ void loop() {
         if (prevGlitch == true) {
           weavecheck();
         }
+        else {
+//Display and update memory//  
+          Serial.print(memory [0] [0]); 
+          Serial.print(memory [0] [1]); 
+          Serial.print(memory [0] [2]); 
+          Serial.print(memory [0] [3]);
+          Serial.print(memory [0] [4]);
+          Serial.println(memory [0] [5]);  //display the new top array values
+
+          for (b = 0; b < 5; b++) { //move memory down a row
+            memory [5] [b] = memory [4] [b];
+            memory [4] [b] = memory [3] [b];
+            memory [3] [b] = memory [2] [b];
+            memory [2] [b] = memory [1] [b];
+            memory [1] [b] = memory [0] [b];
+          }
+
+          pick ++;
+          prevGlitch = glitch;
+        }
+
+
       } else {
 //Generate new row//
         for (a = 0; a < 6; a++) {
@@ -147,6 +171,7 @@ void loop() {
       }
     }
   }
+  prevPedalState = pedalState; // Update previous pedal state for next loop
 }
 
 /////////////////////////////////
@@ -216,7 +241,6 @@ but for now this is good enough.
   Serial.print(memory [0] [4]);
   Serial.println(memory [0] [5]);  //display the new top array values
 
-
   for (b = 0; b < 5; b++) { //move memory down a row
     memory [5] [b] = memory [4] [b];
     memory [4] [b] = memory [3] [b];
@@ -225,16 +249,13 @@ but for now this is good enough.
     memory [1] [b] = memory [0] [b];
   }
 
-
-  prevPedalState = pedalState; // Update previous pedal state for next loop
-  prevGlitch = glitch;
   pick ++;
-
+  prevGlitch = glitch;
   delay(2000); //entirely arbitrary, for readability of serial monitor
 }
 
 
 /*
 cut the delay (add busy variable?), add patterns
-RESULT: 
+RESULT: very sad.
 */
