@@ -69,11 +69,12 @@ int pick = 0;        //pick count is tracking how many rows we've woven. It's es
 /////////////////////////////////
 
 void setup() {
+  Serial.begin(9600);
+  
   pinMode(pedalPin, INPUT); //declare switch pins
   pinMode(toggleUp, INPUT);
   pinMode(toggleDown, INPUT);
 
-  Serial.begin(9600);
   if (! aht.begin()) {
     Serial.println("Could not find DHT? Check wiring");
     while (1) delay(10);
