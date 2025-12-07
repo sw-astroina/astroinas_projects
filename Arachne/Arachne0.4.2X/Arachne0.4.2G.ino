@@ -1,6 +1,6 @@
 /*
 Arachne 0.4.2G
-Sophie Weidmann Dec 5 2025
+Sophie Weidmann Dec 7 2025
 
 The 0.4.2X versions are little chunks of code, made 
 to test specific functionalities of the larger program. 
