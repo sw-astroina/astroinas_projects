@@ -65,12 +65,13 @@ bool prevGlitch = false; //we're tracking this so that we can check pattern vali
 
 int genSeed;     //this is what the dht humidity data turns into, to generate bools from
 int pick = 0;        //pick count is tracking how many rows we've woven. It's essentially "how many times have we done this?"
+int amends = 0;   //how many times has the pattern been changed when weavechecking? Just for display, to see what's happening under the hood
 
 /////////////////////////////////
 
 void setup() {
   Serial.begin(9600);
-  
+
   pinMode(pedalPin, INPUT); //declare switch pins
   pinMode(toggleUp, INPUT);
   pinMode(toggleDown, INPUT);
@@ -89,20 +90,19 @@ void loop() {
   upState = digitalRead(toggleUp);
   downState = digitalRead(toggleDown);
 
-  Serial.print(pedalState);
-  Serial.print(", previously ");
-  Serial.println(prevPedalState);
+  // Serial.print(pedalState);
+  // Serial.print(", previously ");
+  // Serial.println(prevPedalState);  //for debugging
 
 //Detect falling edge of pedal//
   if (pedalState == LOW && prevPedalState == HIGH) {  //the pedal has a pull down resistor, so it shouldn't need debouncing?
-    Serial.print("Pedal released, "); //I'm not even getting this printout, so the above if must be faulty
     if (upState == HIGH) {
       Serial.print("Patterning, ");
       glitch = false;
       on = true;
     } else {
       if (downState == HIGH) {
-      Serial.print("Glitching, ");
+      Serial.print("Glitching,  ");
       glitch = true;
       on = true;
       } else {
@@ -134,24 +134,7 @@ void loop() {
           weavecheck();
         }
         else {
-//Display and update memory//  
-          Serial.print(memory [0] [0]); 
-          Serial.print(memory [0] [1]); 
-          Serial.print(memory [0] [2]); 
-          Serial.print(memory [0] [3]);
-          Serial.print(memory [0] [4]);
-          Serial.println(memory [0] [5]);  //display the new top array values
-
-          for (b = 0; b < 5; b++) { //move memory down a row
-            memory [5] [b] = memory [4] [b];
-            memory [4] [b] = memory [3] [b];
-            memory [3] [b] = memory [2] [b];
-            memory [2] [b] = memory [1] [b];
-            memory [1] [b] = memory [0] [b];
-          }
-
-          pick ++;
-          prevGlitch = glitch;
+          apply(); //skip weavecheck, under assumption that weaver wants what they want regardless of structural validity
         }
 
 
@@ -181,6 +164,7 @@ void loop() {
 /////////////////////////////////
 
 void weavecheck() {
+  amends = 0;
 //Check warp/column//
   columnChange = false;
   for (a = 0; a < 5; a++) {
@@ -191,9 +175,11 @@ void weavecheck() {
             if (memory [0] [a] == memory [5] [a]) {
               if (memory [0] [a] == 0) {
                 memory [0] [a] = 1; //if the whole column is 0s, change the top digit to be a 1.
+                amends ++;
               }
               else {
                 memory [0] [a] = 0; //if the whole column is 1s, change the top digit to be a 0.
+                amends ++;
               }
               columnChange = true;
               changedColumn = a; // I can only mark one column as being changed at a time. How to fix?
@@ -216,19 +202,22 @@ void weavecheck() {
     } 
     if (memory [0] [0] + memory [0] [1] + memory [0] [2] + memory [0] [3] + memory [0] [4] + memory [0] [5] == 0) {
       memory [0] [changingRow] = 1; //if the whole row is 0s, change the 0 to the right of the last changed column to be a 1.
+      amends ++;
     }
     if (memory [0] [0] + memory [0] [1] + memory [0] [2] + memory [0] [3] + memory [0] [4] + memory [0] [5] == 6) {
       memory [0] [changingRow] = 0; //if the whole row is 1s, change the 0 to the right of the last changed column to be a 1.
+      amends ++;
     }
   } else {
     if (memory [0] [0] + memory [0] [1] + memory [0] [2] + memory [0] [3] + memory [0] [4] + memory [0] [5] == 0) {
       memory [0] [random(0,6)] = 1; //if the whole row is 0s, add a 1 somewhere.
+      amends ++;
     }
     if (memory [0] [0] + memory [0] [1] + memory [0] [2] + memory [0] [3] + memory [0] [4] + memory [0] [5] == 6) {
       memory [0] [random(0,6)] = 0; //if the whole row is 1s, add a 0 somewhere.
+      amends ++;
     }
   }
-
 /*
 There are gonna be some edge cases of rows changing to invalidate columns. 
 I'm just gonna trust that there's such a small chance of that occurring
@@ -236,14 +225,18 @@ and trust the weaver to visually catch and manually adjust for that.
 Maybe some developer will come along and offer a better system, 
 but for now this is good enough.
 */
+apply();
+}
 
+
+void apply() {
 //Display and update memory//  
   Serial.print(memory [0] [0]); 
   Serial.print(memory [0] [1]); 
   Serial.print(memory [0] [2]); 
   Serial.print(memory [0] [3]);
   Serial.print(memory [0] [4]);
-  Serial.println(memory [0] [5]);  //display the new top array values
+  Serial.print(memory [0] [5]);  //display the new top array values
 
   for (b = 0; b < 5; b++) { //move memory down a row
     memory [5] [b] = memory [4] [b];
@@ -253,13 +246,20 @@ but for now this is good enough.
     memory [1] [b] = memory [0] [b];
   }
 
+  if (amends > 0) {
+    Serial.print(" amendments: ");
+    Serial.println(amends);
+  } else {
+    Serial.println(" ");
+  }
+
   pick ++;
   prevGlitch = glitch;
-  delay(2000); //entirely arbitrary, for readability of serial monitor
-}
+  delay(800); //for making sure someone doesn't accidentally double-tap the pedal. 
+}              //Fast weavers can lower this at their own risk, but do not take below 50.
 
 
 /*
 cut the delay (add busy variable?), add patterns
-RESULT: consider me a down coat because I am baffled!
+RESULT: HA! Finally, it works! Thank you Kreg!
 */
