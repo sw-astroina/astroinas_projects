@@ -88,6 +88,9 @@ void loop() {
   upState = digitalRead(toggleUp);
   downState = digitalRead(toggleDown);
 
+  Serial.print(pedalState);
+  Serial.print(", previously ");
+  Serial.println(prevPedalState);
 
 //Detect falling edge of pedal//
   if (pedalState == LOW && prevPedalState == HIGH) {  //the pedal has a pull down resistor, so it shouldn't need debouncing?
@@ -257,5 +260,5 @@ but for now this is good enough.
 
 /*
 cut the delay (add busy variable?), add patterns
-RESULT: very sad.
+RESULT: consider me a down coat because I am baffled!
 */
